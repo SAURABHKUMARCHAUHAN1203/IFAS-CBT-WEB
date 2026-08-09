@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IFAS Online CBT & DPP Portal</title>
+  
+  <!-- Official Fonts & KaTeX CDN -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+  <style>
+    :root {
+      --primary-blue: #1e40af;
+      --brand-blue: #1a56db;
+      --deep-navy: #0f172a;
+      --bg-slate: #f4f6fb;
+      --border-color: #e2e8f0;
+      --text-dark: #1e293b;
+      --text-muted: #64748b;
+      --green-correct: #16a34a;
+      --green-bg: #f0fdf4;
+      --red-wrong: #dc2626;
+      --red-bg: #fef2f2;
+      --purple-review: #7c3aed;
+      --orange-review: #d97706;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-slate);
+      color: var(--text-dark);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Loader Screen */
+    #loading-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: #0f172a;
+      color: #fff;
+    }
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid rgba(255,255,255,0.1);
+      border-top-color: #1a56db;
+      border-radius: 50%;
+      animation: spin 1s infinite linear;
+      margin-bottom: 20px;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    /* Input Landing Screen (When no examId in URL) */
+    #landing-screen {
+      display: none;
+      max-width: 600px;
+      margin: 80px auto;
+      padding: 30px;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+    #landing-screen h1 { font-family: 'Sora', sans-serif; font-size: 24px; color: #0f172a; margin-bottom: 10px; }
+    #landing-screen p { color: #64748b; font-size: 14px; margin-bottom: 24px; }
+    .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+    .input-group input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+    }
+    .input-group input:focus { border-color: #1a56db; }
+    .input-group button {
+      padding: 12px 24px;
+      background: #1a56db;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .sample-ids { text-align: left; font-size: 12px; color: #475569; background: #f8fafc; padding: 14px; border-radius: 8px; }
+    .sample-ids code { background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #1e40af; cursor: pointer; }
+
+    /* Container for rendered exam */
+    #exam-portal-container { display: none; height: 100%; flex-direction: column; }
+  </style>
+</head>
+<body>
+
+  <!-- Loading View -->
+  <div id="loading-screen">
+    <div class="spinner"></div>
+    <h2 id="loading-text" style="font-family: 'Sora', sans-serif; font-size: 18px;">Loading IFAS CBT Test...</h2>
+  </div>
+
+  <!-- Landing View (If URL has no examId parameter) -->
+  <div id="landing-screen">
+    <h1>🎓 IFAS CBT & DPP Web Portal</h1>
+    <p>Enter an <b>Exam ID</b> below to launch the interactive test engine live.</p>
+
+    <div class="input-group">
+      <input type="text" id="exam-id-input" placeholder="e.g. 66274d55533043eff6c3383c">
+      <button onclick="launchExamFromInput()">Launch Test 🚀</button>
+    </div>
+
+    <div class="sample-ids">
+      <b>Sample Test IDs:</b><br>
+      • DPP (L02 Molecular Interactions): <code onclick="useId('66274d55533043eff6c3383c')">66274d55533043eff6c3383c</code><br>
+      • Mock Test 01: <code onclick="useId('692e7fb226a2a1c83508fb70')">692e7fb226a2a1c83508fb70</code><br>
+      • Unit Test (Biochemistry): <code onclick="useId('68f0ecb9a0ff027e493e1138')">68f0ecb9a0ff027e493e1138</code>
+    </div>
+  </div>
+
+  <!-- Exam Render Container -->
+  <iframe id="exam-frame" style="display:none; width:100%; height:100vh; border:none;"></iframe>
+
+  <script>
+    const API_BASE = "https://stagingbackend.ifasonline.com";
+    const AUTH_TOKEN = "3bf7fc663cd0d5dad7b1e9885e61a840";
+
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param) || urlParams.get('id');
+    }
+
+    function useId(id) {
+      document.getElementById('exam-id-input').value = id;
+      launchExamFromInput();
+    }
+
+    function launchExamFromInput() {
+      const id = document.getElementById('exam-id-input').value.trim();
+      if (id) {
+        window.location.search = `?examId=${id}`;
+      }
+    }
+
+    async function init() {
+      const examId = getQueryParam('examId');
+
+      if (!examId) {
+        document.getElementById('loading-screen').style.display = 'none';
+        document.getElementById('landing-screen').style.display = 'block';
+        return;
+      }
+
+      document.getElementById('loading-text').innerText = `Fetching Exam ID: ${examId}...`;
+
+      try {
+        const response = await fetch(`${API_BASE}/v1/exams/getExam/${examId}`, {
+          headers: {
+            "Authorization": `Bearer ${AUTH_TOKEN}`,
+            "User-Agent": "okhttp/4.9.2"
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Server returned status ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.statusCode !== 200 || !data.data || !data.data.examData || data.data.examData.length === 0) {
+          throw new Error(data.msg || "Invalid exam data received");
+        }
+
+        // Render exam data inside template
+        renderExamInFrame(data);
+      } catch (err) {
+        document.getElementById('loading-screen').innerHTML = `
+          <h2 style="color: #ef4444; font-family: 'Sora', sans-serif;">❌ Exam Fetch Failed</h2>
+          <p style="margin-top: 10px; color: #94a3b8;">${err.message}</p>
+          <button onclick="window.location.href='index.html'" style="margin-top: 20px; padding: 10px 20px; background: #1a56db; color: #fff; border: none; border-radius: 6px; cursor: pointer;">Go Back</button>
+        `;
+      }
+    }
+
+    function renderExamInFrame(examJson) {
+      const examObj = examJson.data.examData[0];
+      const examTitle = (examObj.en && examObj.en.name) ? examObj.en.name : "IFAS CBT Test";
+
+      // Load base template HTML from master_ifas_template.html logic
+      const iframe = document.getElementById('exam-frame');
+      iframe.style.display = 'block';
+      document.getElementById('loading-screen').style.display = 'none';
+
+      // Pass json data directly into iframe
+      window.EXAM_DATA = examJson;
+      window.TEST_TITLE = examTitle;
+
+      // Point iframe to template renderer
+      iframe.src = `template_runner.html?examId=${getQueryParam('examId')}`;
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>

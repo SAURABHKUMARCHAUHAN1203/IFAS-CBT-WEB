@@ -1,0 +1,1793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IFAS Interactive CBT Test</title>
+  
+  <!-- Official Fonts & KaTeX CDN -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+  <style>
+    :root {
+      --primary-blue: #1e40af;
+      --brand-blue: #1a56db;
+      --deep-navy: #0f172a;
+      --bg-slate: #f4f6fb;
+      --border-color: #e2e8f0;
+      --text-dark: #1e293b;
+      --text-muted: #64748b;
+      --green-correct: #16a34a;
+      --green-bg: #f0fdf4;
+      --red-wrong: #dc2626;
+      --red-bg: #fef2f2;
+      --purple-review: #7c3aed;
+      --orange-review: #d97706;
+    }
+
+    /* Desktop Sidebar Toggle Button */
+    .btn-desktop-toggle {
+      position: absolute;
+      top: 50%;
+      right: 320px;
+      transform: translate(50%, -50%);
+      width: 24px;
+      height: 60px;
+      background: #1e40af;
+      color: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: 8px 0 0 8px;
+      cursor: pointer;
+      z-index: 1001;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+    }
+    .btn-desktop-toggle:hover {
+      background: #1a56db;
+    }
+    .screen-test.sidebar-collapsed .btn-desktop-toggle {
+      right: 0px;
+      border-radius: 0 8px 8px 0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-slate);
+      color: var(--text-dark);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body.in-exam {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Navigation Header */
+    .ifas-top-header {
+      background: #ffffff;
+      height: 56px;
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--border-color);
+      flex-shrink: 0;
+      z-index: 1000;
+    }
+    .header-logo-group { display: flex; align-items: center; gap: 12px; }
+    .header-logo { height: 34px; }
+    .header-title { font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 700; color: #0f172a; }
+    .header-right { display: flex; align-items: center; gap: 14px; }
+    .timer-pill {
+      background: #1e40af;
+      color: #ffffff;
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: 0.5px;
+    }
+    .btn-close-header {
+      background: #1a56db;
+      color: #fff;
+      border: none;
+      padding: 6px 18px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    /* Status Bar Ribbon */
+    .exam-status-ribbon {
+      background: #ffffff;
+      padding: 6px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 12px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .status-badges-group { display: flex; align-items: center; gap: 16px; }
+    .status-badge { display: inline-flex; align-items: center; gap: 6px; color: #475569; }
+    .status-dot { width: 18px; height: 18px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; font-weight: bold; }
+    .dot-answered { background: #16a34a; }
+    .dot-not-answered { background: #dc2626; }
+    .dot-marked { background: #d97706; }
+    .dot-marked-save { background: #7c3aed; }
+    .dot-not-visited { background: #94a3b8; }
+
+    /* Screen 1: Instructions */
+    .screen-instructions {
+      max-width: 1280px;
+      margin: 20px auto;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: 1fr 1.5fr;
+      gap: 20px;
+    }
+    .card-box {
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      padding: 22px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .card-box-header {
+      font-family: 'Sora', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: #1e3a8a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 18px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e0e7ff;
+    }
+    .stats-2x2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .stat-tile {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .stat-tile-icon { font-size: 24px; }
+    .stat-tile-value { font-size: 15px; font-weight: 700; color: #0f172a; }
+    .stat-tile-label { font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 600; }
+
+    .marking-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      text-align: center;
+    }
+    .marking-table th {
+      background: #f1f5f9;
+      color: #475569;
+      padding: 9px;
+      border: 1px solid var(--border-color);
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+    .marking-table td {
+      padding: 10px;
+      border: 1px solid var(--border-color);
+      font-weight: 600;
+    }
+
+    .instructions-content { font-size: 13px; line-height: 1.7; color: #334155; }
+    .instruction-step { display: flex; gap: 12px; margin-bottom: 12px; }
+    .step-num {
+      width: 22px;
+      height: 22px;
+      background: #1a56db;
+      color: #fff;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: bold;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .legend-box {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 12px;
+      margin: 14px 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      font-size: 12px;
+    }
+
+    .instructions-footer {
+      max-width: 1280px;
+      margin: 0 auto 30px auto;
+      padding: 14px 22px;
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .btn-proceed {
+      background: #1e40af;
+      color: #fff;
+      border: none;
+      padding: 11px 28px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+    .btn-proceed:hover { background: #1d4ed8; }
+
+    /* Screen 2: Test Arena */
+    .screen-test {
+      display: none;
+      flex: 1;
+      min-height: 0;
+      grid-template-columns: 1fr 320px;
+      overflow: hidden;
+      position: relative;
+      transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .screen-test.sidebar-collapsed {
+      grid-template-columns: 1fr 0px;
+    }
+    .test-main-column {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+      background: #ffffff;
+      border-right: 1px solid var(--border-color);
+      overflow: hidden;
+    }
+    .question-top-bar {
+      padding: 8px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+      background: #fafbfc;
+      flex-shrink: 0;
+    }
+    .q-nav-selector { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 13px; }
+    .q-badge { padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+    .badge-pos { background: #dcfce7; color: #15803d; }
+    .badge-neg { background: #fee2e2; color: #b91c1c; }
+    .badge-type { background: #e0e7ff; color: #3730a3; }
+
+    .question-scroll-area {
+      flex: 1;
+      min-height: 0;
+      padding: 20px 24px;
+      overflow-y: auto;
+    }
+    .question-text {
+      font-size: 14px;
+      line-height: 1.75;
+      color: #1e293b;
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+    .question-text img { max-width: 100%; height: auto; border-radius: 6px; margin: 10px 0; display: block; }
+    
+    .options-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .option-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 16px;
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .option-row:hover { border-color: #3b82f6; background: #f0f7ff; }
+    .option-row.selected {
+      border-color: #2563eb;
+      background: #eff6ff;
+    }
+    .opt-circle-num {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 1.5px solid #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+      color: #475569;
+      flex-shrink: 0;
+    }
+    .option-row.selected .opt-circle-num {
+      background: #1a56db;
+      color: #ffffff;
+      border-color: #1a56db;
+    }
+    .opt-content { flex: 1; font-size: 13.5px; line-height: 1.6; color: #334155; }
+    .opt-content img { max-width: 100%; border-radius: 6px; margin: 6px 0; }
+
+    /* EXACT OFFICIAL CBT ACTION BUTTONS */
+    .test-actions-footer {
+      height: 58px;
+      min-height: 58px;
+      padding: 0 20px;
+      background: #ffffff;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      z-index: 100;
+    }
+    .exam-btn {
+      align-items: center;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+      display: inline-flex;
+      font-size: 13px;
+      font-weight: 600;
+      gap: 6px;
+      padding: 8px 14px;
+      transition: opacity .15s, transform .1s;
+      white-space: nowrap;
+    }
+    .exam-btn:hover { opacity: .9; transform: translateY(-1px); }
+    .exam-btn:active { transform: translateY(0); }
+    .exam-btn.disabled { opacity: .5; pointer-events: none; }
+    .exam-btn-mark-save { background: #7c3aed; }
+    .exam-btn-review { background: #d97706; }
+    .exam-btn-clear { background: #dc2626; }
+    .exam-btn-next {
+      background: #1e40af;
+      box-shadow: 0 4px 12px rgba(30, 64, 175, 0.35);
+      font-size: 14px;
+      font-weight: 700;
+      padding: 9px 24px;
+    }
+    .exam-btn-next:hover { background: #1d4ed8; }
+
+    .rsp-submit-btn {
+      background: #1e40af;
+      border: none;
+      border-radius: 9px;
+      color: #fff;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 10px;
+      transition: background .15s, box-shadow .15s;
+      width: 100%;
+    }
+    .rsp-submit-btn:hover { background: #1d4ed8; box-shadow: 0 6px 16px rgba(30, 64, 175, 0.4); }
+
+    /* Palette Sidebar */
+    .palette-sidebar {
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .rsp-header {
+      border-bottom: 1px solid var(--border-color);
+      flex-shrink: 0;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .rsp-title { color: #1e40af; font-size: 13px; font-weight: 800; margin: 0; }
+    .rsp-qs-badge { background: #eff6ff; border-radius: 6px; color: #1e40af; font-size: 11px; font-weight: 700; padding: 2px 8px; }
+
+    .palette-grid-scroll {
+      flex: 1;
+      min-height: 0;
+      padding: 14px;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      align-content: start;
+    }
+    .q-pal-bubble {
+      height: 36px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      background: #94a3b8;
+      color: #ffffff;
+      border: 1px solid rgba(0,0,0,0.05);
+      position: relative;
+    }
+    .q-pal-bubble.active-bubble { outline: 2px solid #1e40af; outline-offset: 1px; }
+    .q-pal-bubble.pal-answered { background: #16a34a; }
+    .q-pal-bubble.pal-not-answered { background: #dc2626; }
+    .q-pal-bubble.pal-marked { background: #d97706; }
+    .q-pal-bubble.pal-marked-save { background: #7c3aed; }
+    .rsp-submit-wrap {
+      border-top: 1px solid var(--border-color);
+      padding: 12px 16px;
+      flex-shrink: 0;
+      background: #fafbfc;
+    }
+
+    /* SCREEN 3: EXACT OFFICIAL DETAILRESULT STYLING */
+    .screen-results {
+      display: none;
+      max-width: 1280px;
+      margin: 20px auto 40px auto;
+      padding: 0 20px;
+      overflow-y: auto;
+    }
+
+    /* Hero Banner */
+    .testBanner {
+      background: linear-gradient(135deg, #091e42 0%, #002b9a 50%, #0d6efd 100%);
+      border-radius: 16px;
+      padding: 24px 28px;
+      color: #ffffff;
+      box-shadow: 0 4px 20px rgba(0, 43, 154, 0.15);
+      margin-bottom: 22px;
+    }
+    .banner-grid {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr 1fr;
+      gap: 20px;
+      align-items: center;
+    }
+    .icon-circle {
+      background: rgba(156, 163, 175, 0.2);
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    .banner-stat-tile {
+      background: rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+    .banner-stat-val { font-size: 16px; font-weight: 800; font-family: 'Sora', sans-serif; }
+    .banner-stat-lbl { font-size: 10px; opacity: 0.85; margin-top: 2px; }
+
+    /* Official Tab Strip */
+    .tb-root {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      display: flex;
+      gap: 4px;
+      margin-bottom: 18px;
+      padding: 4px;
+      width: fit-content;
+    }
+    .tb-btn {
+      align-items: center;
+      background: transparent;
+      border: none;
+      border-radius: 10px;
+      color: #64748b;
+      cursor: pointer;
+      display: flex;
+      font-size: 12.5px;
+      font-weight: 500;
+      gap: 6px;
+      padding: 9px 18px;
+      transition: all .2s;
+    }
+    .tb-btn.active {
+      background: #1a56db;
+      color: #fff;
+      font-weight: 700;
+    }
+    .tb-btn:not(.active):hover { background: #f1f5f9; color: #0f172a; }
+
+    /* Overview Tab */
+    .ov-root { width: 100%; display: flex; flex-direction: column; gap: 18px; }
+    .ov-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .ov-card__title { color: #0f172a; font-size: 14px; font-weight: 800; margin-bottom: 14px; }
+    .ov-breakdown-row { border-radius: 10px; padding: 11px 14px; margin-bottom: 10px; }
+    .ov-dot { border-radius: 2px; flex-shrink: 0; height: 8px; width: 8px; }
+    .ov-bd-label { color: #334155; font-size: 12px; font-weight: 600; }
+    .ov-bd-count { font-size: 14px; font-weight: 800; }
+    .ov-bd-pts { font-size: 13px; font-weight: 700; }
+    .ov-bar-track { background: rgba(0,0,0,0.07); border-radius: 3px; height: 6px; overflow: hidden; margin-top: 6px; }
+    .ov-bar-fill { border-radius: 3px; height: 100%; transition: width .8s; }
+    .ov-net-score {
+      align-items: center;
+      background: linear-gradient(90deg, #eff6ff, #f0fdf4);
+      border: 1.5px solid #bfdbfe;
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      padding: 13px 16px;
+      margin-top: 14px;
+    }
+    .ov-net-score__label { color: #0f172a; font-size: 14px; font-weight: 700; }
+    .ov-net-score__val { font-size: 22px; font-weight: 800; letter-spacing: -.5px; }
+    .ov-net-score__max { color: #94a3b8; font-size: 14px; font-weight: 400; }
+
+    .ov-perf-tile {
+      align-items: center;
+      background: #f1f5f9;
+      border-radius: 10px;
+      display: flex;
+      gap: 12px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+    }
+    .ov-perf-tile__ic { font-size: 22px; }
+    .ov-perf-tile__lbl { color: #64748b; font-size: 10px; font-weight: 600; text-transform: uppercase; }
+    .ov-perf-tile__val { font-size: 16px; font-weight: 800; line-height: 1.2; }
+
+    /* Solutions Feed Official Cards (qs-card) */
+    .solutions-container { display: flex; flex-direction: column; gap: 18px; }
+    .qs-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(67,97,238,0.06);
+      overflow: hidden;
+      transition: box-shadow .2s ease, transform .2s ease;
+    }
+    .qs-card__header {
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .qs-card__header--correct { background: #f0fdf4; border-color: #bbf7d0; }
+    .qs-card__header--wrong { background: #fef2f2; border-color: #fecaca; }
+    .qs-card__header--skipped { background: #f8fafc; border-color: #e2e8f0; }
+    .qs-card__body { padding: 20px 22px; }
+    .qs-card__meta { align-items: center; font-size: 12px; font-weight: 700; display: flex; gap: 12px; }
+    .qs-card__meta--correct { color: #16a34a; }
+    .qs-card__meta--wrong { color: #dc2626; }
+    .qs-card__meta--skipped { color: #64748b; }
+
+    .qs-status-icon {
+      align-items: center;
+      border-radius: 50%;
+      display: inline-flex;
+      flex-shrink: 0;
+      font-size: 13px;
+      font-weight: 800;
+      height: 28px;
+      justify-content: center;
+      width: 28px;
+    }
+    .qs-status-icon--correct { background: #16a34a; color: #fff; }
+    .qs-status-icon--wrong { background: #dc2626; color: #fff; }
+    .qs-status-icon--skipped { background: #64748b; color: #fff; }
+
+    .qs-chip {
+      border-radius: 999px;
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .3px;
+      padding: 3px 10px;
+    }
+    .qs-chip--primary { background: #eef1ff; color: #4361ee; }
+    .qs-chip--purple { background: #f5f3ff; color: #7c3aed; }
+    .qs-score { font-weight: 800; }
+    .qs-score--positive { color: #16a34a; }
+    .qs-score--negative { color: #dc2626; }
+
+    .qs-question-text { color: #1e293b; font-size: 14px; line-height: 1.75; margin-bottom: 16px; font-weight: 500; }
+    .qs-question-text img { max-width: 100%; height: auto; border-radius: 6px; margin: 8px 0; }
+
+    /* Official Option Rows with Analytics Percent Bar */
+    .qs-option {
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+      transition: border-color .15s ease;
+      margin-bottom: 8px;
+    }
+    .qs-option--correct { background: #f0fdf4; border-color: #16a34a; }
+    .qs-option--wrong { background: #fef2f2; border-color: #dc2626; }
+    .qs-option__content {
+      align-items: center;
+      display: flex;
+      gap: 10px;
+      padding: 10px 14px;
+      position: relative;
+      z-index: 1;
+    }
+    .qs-option__marker {
+      align-items: center;
+      border-radius: 50%;
+      display: flex;
+      flex-shrink: 0;
+      font-size: 11px;
+      font-weight: 800;
+      height: 26px;
+      justify-content: center;
+      width: 26px;
+    }
+    .qs-option__marker--correct { background: #16a34a; color: #fff; }
+    .qs-option__marker--wrong { background: #dc2626; color: #fff; }
+    .qs-option__marker--neutral { background: #e2e8f0; color: #64748b; }
+    .qs-option__text { color: #1e293b; flex: 1; font-size: 13px; line-height: 1.5; }
+    .qs-option--correct .qs-option__text { color: #16a34a; font-weight: 700; }
+    .qs-option--wrong .qs-option__text { color: #dc2626; font-weight: 700; }
+    .qs-option__pct { color: #64748b; flex-shrink: 0; font-size: 12px; font-weight: 700; margin-left: auto; }
+
+    /* Official Yellow Accordion for Answer Explanation */
+    .qs-accordion-item {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 14px;
+      margin-bottom: 12px;
+    }
+    .qs-accordion-btn {
+      background: #fffbeb !important;
+      border: none;
+      width: 100%;
+      text-align: left;
+      color: #d97706 !important;
+      font-size: 13px !important;
+      font-weight: 700 !important;
+      padding: 12px 16px !important;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .qs-accordion-body {
+      background: #fffbeb;
+      color: #78350f;
+      font-size: 13px;
+      line-height: 1.75;
+      padding: 8px 16px 16px 16px;
+      border-top: 1px dashed #fde68a;
+    }
+    .qs-accordion-body img { max-width: 100%; height: auto; border-radius: 6px; margin: 8px 0; }
+
+    .qs-btn-report {
+      align-items: center;
+      background: transparent;
+      border: 1.5px dashed #2563eb;
+      border-radius: 8px;
+      color: #2563eb;
+      cursor: pointer;
+      display: inline-flex;
+      font-size: 12px;
+      font-weight: 600;
+      gap: 6px;
+      padding: 8px 14px;
+      transition: all .18s ease;
+    }
+    .qs-btn-report:hover { background: #2563eb; color: #fff; }
+
+    /* Mobile Toggle Button */
+    .btn-toggle-palette {
+      background: #f1f5f9;
+      color: #1e293b;
+      border: 1px solid var(--border-color);
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      gap: 4px;
+      margin-right: 8px;
+    }
+    .btn-toggle-palette:hover {
+      background: #e2e8f0;
+    }
+
+    /* Backdrop */
+    .sidebar-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 998;
+      display: none;
+    }
+
+    /* Media queries for tablet & mobile */
+    @media (max-width: 991px) {
+      .screen-instructions {
+        grid-template-columns: 1fr;
+      }
+      .instructions-footer {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+      }
+      
+      .screen-test {
+        grid-template-columns: 1fr;
+      }
+      
+      .palette-sidebar {
+        position: fixed;
+        top: 56px;
+        right: -300px;
+        width: 280px;
+        height: calc(100% - 56px);
+        z-index: 999;
+        transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: -4px 0 12px rgba(0, 0, 0, 0.15);
+      }
+      
+      .palette-sidebar.open {
+        right: 0;
+      }
+      
+      .sidebar-backdrop.active {
+        display: block;
+      }
+
+      body.in-exam .btn-toggle-palette {
+        display: inline-flex;
+      }
+
+      .btn-desktop-toggle {
+        display: none !important;
+      }
+      
+      .banner-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+      
+      .ov-root > div {
+        grid-template-columns: 1fr !important;
+      }
+      
+      /* Question option layouts adjustment for touch */
+      .option-row {
+        padding: 14px 12px;
+      }
+      .opt-content {
+        font-size: 13px;
+      }
+
+      /* Mobile Test Actions Footer */
+      .test-actions-footer {
+        height: auto;
+        min-height: auto;
+        padding: 10px 12px;
+        flex-direction: column;
+        gap: 8px;
+        align-items: stretch;
+      }
+      .test-actions-footer > div {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .test-actions-footer .exam-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 8px 6px;
+        font-size: 11px;
+      }
+      .test-actions-footer .exam-btn-next {
+        width: 100%;
+        justify-content: center;
+        padding: 10px;
+        font-size: 13px;
+      }
+
+      /* Mobile Spacing & Label Overrides to prevent overflow */
+      .badge-label {
+        display: none !important;
+      }
+      .status-badges-group {
+        gap: 8px !important;
+      }
+      .exam-status-ribbon {
+        padding: 6px 10px !important;
+      }
+      .question-top-bar {
+        padding: 6px 10px !important;
+      }
+      .question-top-bar > div {
+        gap: 4px !important;
+      }
+      .q-badge {
+        padding: 3px 6px !important;
+        font-size: 10px !important;
+      }
+      .q-nav-selector {
+        gap: 6px !important;
+        font-size: 12px !important;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stats-2x2 {
+        grid-template-columns: 1fr;
+      }
+      .header-title {
+        display: none; /* Hide exam title on tiny screens to save space */
+      }
+      .ifas-top-header {
+        padding: 0 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleMobileSidebar()"></div>
+
+  <!-- Top Navigation Header -->
+  <header class="ifas-top-header">
+    <div class="header-logo-group">
+      <img src="https://ifasonline.com/static/media/logo.a2448699b056350580eb.png" alt="IFAS Logo" class="header-logo" onerror="this.src='https://cdn.ifasonline.com/2023/MicrosoftTeams-image+(4).png'">
+      <div class="header-title" id="topExamTitle">{{TEST_TITLE}}</div>
+    </div>
+    <div class="header-right">
+      <button class="btn-toggle-palette" id="btnTogglePalette" onclick="toggleMobileSidebar()">☰ Palette</button>
+      <div class="timer-pill" id="liveTimerPill">
+        <span>⏱️</span> <span id="timerDigits">60:00</span>
+      </div>
+      <button class="btn-close-header" id="btnCloseExam" style="display:none;" onclick="location.reload()">Close</button>
+    </div>
+  </header>
+
+  <!-- SCREEN 1: Instructions -->
+  <div id="screenInstructions" class="screen-instructions">
+    <!-- Left Column: Marking Scheme -->
+    <div class="card-box">
+      <div class="card-box-header">📑 Marking Scheme</div>
+      <div class="stats-2x2">
+        <div class="stat-tile">
+          <div class="stat-tile-icon">⏱️</div>
+          <div>
+            <div class="stat-tile-value" id="insDuration">60.00 Min</div>
+            <div class="stat-tile-label">DURATION</div>
+          </div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-tile-icon">🌐</div>
+          <div>
+            <div class="stat-tile-value">English</div>
+            <div class="stat-tile-label">LANGUAGE</div>
+          </div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-tile-icon">❓</div>
+          <div>
+            <div class="stat-tile-value" id="insTotalQs">50</div>
+            <div class="stat-tile-label">TOTAL QUESTIONS</div>
+          </div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-tile-icon">📊</div>
+          <div>
+            <div class="stat-tile-value" id="insMaxMarks">100</div>
+            <div class="stat-tile-label">MAXIMUM MARKS</div>
+          </div>
+        </div>
+      </div>
+
+      <table class="marking-table">
+        <thead>
+          <tr>
+            <th>Question Range</th>
+            <th>Type</th>
+            <th>Correct Marks</th>
+            <th>Negative Marks</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td id="insTableRange">1 - 50</td>
+            <td>MCQ</td>
+            <td id="insTableCorrect">+2</td>
+            <td id="insTableNegative">-0.5</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Right Column: General Instructions -->
+    <div class="card-box">
+      <div class="card-box-header">📜 General Instructions</div>
+      <div class="instructions-content">
+        <div class="instruction-step">
+          <div class="step-num">1</div>
+          <div>Total duration of examination is set at the server. The countdown timer in top right displays remaining time.</div>
+        </div>
+        <div class="instruction-step">
+          <div class="step-num">2</div>
+          <div>The Questions Palette displayed on the right of screen will show status of each question using the symbols below:</div>
+        </div>
+
+        <div class="legend-box">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div class="status-dot dot-not-visited"></div> <b>Not Visited</b>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div class="status-dot dot-not-answered"></div> <b>Not Answered</b>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div class="status-dot dot-answered">✓</div> <b>Answered</b>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div class="status-dot dot-marked">⚑</div> <b>Mark for Review</b>
+          </div>
+        </div>
+
+        <div class="instruction-step">
+          <div class="step-num">3</div>
+          <div>Click on <b>Save & Next →</b> to save your answer and proceed to the next question.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="instructionsFooter" class="instructions-footer">
+    <label style="display:flex; align-items:center; gap:8px; font-weight:600; font-size:14px; cursor:pointer;">
+      <input type="checkbox" id="chkAgree" style="width:18px; height:18px;"> I have read and understood all the instructions.
+    </label>
+    <button class="btn-proceed" id="btnStartExam" onclick="startExamSession()">Accept & Proceed →</button>
+  </div>
+
+  <!-- SCREEN 2: Test Screen -->
+  <div id="screenTest" class="screen-test">
+    <!-- Desktop toggle sidebar button -->
+    <button type="button" class="btn-desktop-toggle" id="btnDesktopToggle" onclick="toggleDesktopSidebar()">
+      <span id="desktopToggleArrow">▶</span>
+    </button>
+    <!-- Main Question View -->
+    <div class="test-main-column">
+      <div class="exam-status-ribbon">
+        <div class="status-badges-group">
+          <span class="status-badge"><span class="status-dot dot-answered">✓</span> <span id="cntAnswered">00</span> <span class="badge-label">Answered</span></span>
+          <span class="status-badge"><span class="status-dot dot-not-answered"></span> <span id="cntNotAnswered">01</span> <span class="badge-label">Not Answered</span></span>
+          <span class="status-badge"><span class="status-dot dot-marked">⚑</span> <span id="cntMarked">00</span> <span class="badge-label">Marked</span></span>
+          <span class="status-badge"><span class="status-dot dot-not-visited"></span> <span id="cntNotVisited">49</span> <span class="badge-label">Not Visited</span></span>
+        </div>
+      </div>
+
+      <!-- Question Top Bar -->
+      <div class="question-top-bar">
+        <div class="q-nav-selector">
+          <span style="cursor:pointer; font-size:18px;" onclick="navigateRelative(-1)">❮</span>
+          <span id="currentQDisplay">Q. 1 / 50</span>
+          <span style="cursor:pointer; font-size:18px;" onclick="navigateRelative(1)">❯</span>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <span class="q-badge badge-pos" id="badgeCorrectMarks">+2 Marks</span>
+          <span class="q-badge badge-neg" id="badgeNegativeMarks">-0.5 Marks</span>
+          <span class="q-badge badge-type" id="badgeQType">MCQ</span>
+        </div>
+      </div>
+
+      <!-- Scrollable Question Canvas -->
+      <div class="question-scroll-area" id="questionCanvas">
+        <div class="question-text" id="liveQuestionText">Loading Question...</div>
+        <div class="options-grid" id="liveOptionsGrid"></div>
+      </div>
+
+      <!-- EXACT OFFICIAL CBT ACTION BAR -->
+      <div class="test-actions-footer">
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button type="button" class="exam-btn exam-btn-mark-save" onclick="markAndSave()">
+            <span>🔖</span> <span>Mark & Ans</span>
+          </button>
+          <button type="button" class="exam-btn exam-btn-review" onclick="markForReviewAndNext()">
+            <span>⚑</span> <span>Mark</span>
+          </button>
+          <button type="button" class="exam-btn exam-btn-clear" onclick="clearCurrentResponse()">
+            <span>✕</span> <span>Clear</span>
+          </button>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button type="button" class="exam-btn exam-btn-next" onclick="saveAndNext()">
+            Save & Next →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Palette Sidebar -->
+    <div class="palette-sidebar">
+      <div class="rsp-header">
+        <span class="rsp-title">Exam Status</span>
+        <span class="rsp-qs-badge" id="palTotalCount">50 Qs</span>
+      </div>
+      <div class="palette-grid-scroll" id="paletteGridContainer"></div>
+      <div class="rsp-submit-wrap">
+        <button type="button" class="rsp-submit-btn" onclick="submitExam(true)">Review & Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: EXACT OFFICIAL DETAILRESULT -->
+  <div id="screenResults" class="screen-results">
+    <!-- Hero Banner -->
+    <div class="testBanner">
+      <div style="font-size:11px; text-transform:uppercase; letter-spacing:1.5px; opacity:0.85; margin-bottom:4px;">CSIR NET LIFE SCIENCE</div>
+      <div style="font-family:'Sora', sans-serif; font-size:22px; font-weight:800; margin-bottom:14px;" id="resBannerTitle">{{TEST_TITLE}}</div>
+      
+      <div class="banner-grid">
+        <!-- 4 mini stats -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <div class="banner-stat-tile">
+            <div class="banner-stat-val" style="color:#4ade80;" id="resCntCorrect">0</div>
+            <div class="banner-stat-lbl">Correct Answers</div>
+          </div>
+          <div class="banner-stat-tile">
+            <div class="banner-stat-val" style="color:#f87171;" id="resCntWrong">0</div>
+            <div class="banner-stat-lbl">Wrong Answers</div>
+          </div>
+          <div class="banner-stat-tile">
+            <div class="banner-stat-val" style="color:#93c5fd;" id="resCntSkipped">0</div>
+            <div class="banner-stat-lbl">Skipped Questions</div>
+          </div>
+          <div class="banner-stat-tile">
+            <div class="banner-stat-val" style="color:#fcd34d;" id="resAvgTime">00:56</div>
+            <div class="banner-stat-lbl">Avg/Questions</div>
+          </div>
+        </div>
+
+        <!-- Rank tile -->
+        <div style="display:flex; align-items:center; gap:12px; background:rgba(255,255,255,0.08); padding:14px; border-radius:10px;">
+          <div class="icon-circle">🏆</div>
+          <div>
+            <div style="font-size:10px; color:#93c5fd; font-weight:700;">YOUR RANK</div>
+            <div style="font-size:24px; font-weight:800; font-family:'Sora', sans-serif;"># 1</div>
+          </div>
+        </div>
+
+        <!-- Score Dial -->
+        <div style="display:flex; align-items:center; gap:12px; background:rgba(255,255,255,0.08); padding:14px; border-radius:10px;">
+          <div class="icon-circle">🎯</div>
+          <div>
+            <div style="font-size:10px; color:#93c5fd; font-weight:700;">YOUR SCORE</div>
+            <div style="font-size:22px; font-weight:800; font-family:'Sora', sans-serif;" id="resScoreVal">0 / 100</div>
+            <div style="font-size:10px; color:#4ade80; font-weight:600;" id="resAccuracy">Accuracy - 0.0%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Official Tab Buttons Strip -->
+    <div class="tb-root">
+      <button class="tb-btn active" id="tabBtnOverview" onclick="switchResultTab('overview')">
+        <span class="tb-btn__ic">📊</span> <span class="tb-btn__label">Overview</span>
+      </button>
+      <button class="tb-btn" id="tabBtnSolutions" onclick="switchResultTab('solutions')">
+        <span class="tb-btn__ic">📝</span> <span class="tb-btn__label">Solutions</span>
+      </button>
+    </div>
+
+    <!-- Overview Tab Section -->
+    <div class="ov-root" id="resOverviewSection">
+      <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:18px;">
+        <!-- Left: Score Breakdown -->
+        <div class="ov-card">
+          <div class="ov-card__title">Score Breakdown</div>
+          
+          <div class="ov-breakdown-row" style="background:#f0fdf4;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div class="ov-dot" style="background:#16a34a;"></div>
+                <span class="ov-bd-label">Correct</span>
+                <span class="ov-bd-count" style="color:#16a34a;" id="ovCorrectCount">0</span>
+              </div>
+              <span class="ov-bd-pts" style="color:#16a34a;" id="ovCorrectPts">0.0 pts</span>
+            </div>
+            <div class="ov-bar-track">
+              <div class="ov-bar-fill" id="ovBarCorrect" style="background:#16a34a; width:0%;"></div>
+            </div>
+          </div>
+
+          <div class="ov-breakdown-row" style="background:#fef2f2;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div class="ov-dot" style="background:#dc2626;"></div>
+                <span class="ov-bd-label">Wrong</span>
+                <span class="ov-bd-count" style="color:#dc2626;" id="ovWrongCount">0</span>
+              </div>
+              <span class="ov-bd-pts" style="color:#dc2626;" id="ovWrongPts">0.0 pts</span>
+            </div>
+            <div class="ov-bar-track">
+              <div class="ov-bar-fill" id="ovBarWrong" style="background:#dc2626; width:0%;"></div>
+            </div>
+          </div>
+
+          <div class="ov-breakdown-row" style="background:#f8fafc;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div class="ov-dot" style="background:#64748b;"></div>
+                <span class="ov-bd-label">Skipped</span>
+                <span class="ov-bd-count" style="color:#64748b;" id="ovSkippedCount">0</span>
+              </div>
+              <span class="ov-bd-pts" style="color:#64748b;">0.0 pts</span>
+            </div>
+            <div class="ov-bar-track">
+              <div class="ov-bar-fill" id="ovBarSkipped" style="background:#64748b; width:100%;"></div>
+            </div>
+          </div>
+
+          <div class="ov-net-score">
+            <span class="ov-net-score__label">Net Score</span>
+            <span class="ov-net-score__val" id="ovNetScoreVal" style="color:#16a34a;">0.0 <span class="ov-net-score__max" id="ovNetScoreMax">/ 100</span></span>
+          </div>
+        </div>
+
+        <!-- Right: Performance vs Batch -->
+        <div class="ov-card">
+          <div class="ov-card__title">Performance vs Batch</div>
+          
+          <div class="ov-perf-tile">
+            <span class="ov-perf-tile__ic">🏆</span>
+            <div>
+              <div class="ov-perf-tile__lbl">Your Rank</div>
+              <div class="ov-perf-tile__val" style="color:#1e40af;"># 1</div>
+            </div>
+          </div>
+
+          <div class="ov-perf-tile">
+            <span class="ov-perf-tile__ic">📈</span>
+            <div>
+              <div class="ov-perf-tile__lbl">Percentile</div>
+              <div class="ov-perf-tile__val" style="color:#7c3aed;">98.5th</div>
+            </div>
+          </div>
+
+          <div class="ov-perf-tile">
+            <span class="ov-perf-tile__ic">⭐</span>
+            <div>
+              <div class="ov-perf-tile__lbl">Top Score</div>
+              <div class="ov-perf-tile__val" style="color:#16a34a;" id="ovTopScore">100 / 100</div>
+            </div>
+          </div>
+
+          <div class="ov-perf-tile">
+            <span class="ov-perf-tile__ic">📊</span>
+            <div>
+              <div class="ov-perf-tile__lbl">Attempted %</div>
+              <div class="ov-perf-tile__val" style="color:#0f172a;" id="ovAttemptedPct">0.0%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Solutions List Feed Tab -->
+    <div class="solutions-container" id="solutionsFeed" style="display:none;"></div>
+  </div>
+
+  <script>
+    // Embedded Solved Exam Dataset
+    const RAW_EXAM_DATA = window.parent.EXAM_DATA || window.EXAM_DATA;
+
+    // Helper to clean escaped newlines & formatting artifacts
+    function cleanHtmlContent(html) {
+      if (!html || typeof html !== 'string') return '';
+      return html
+        .replace(/\\r\\n/g, '')
+        .replace(/\\n/g, '')
+        .replace(/\\r/g, '')
+        .replace(/\\t/g, '')
+        .replace(/\r\n/g, '')
+        .replace(/\r/g, '')
+        .replace(/\n/g, '');
+    }
+
+    // Universal Question Normalizer
+    function parseAndNormalizeQuestions(data) {
+      let raw_qs = [];
+      if (data.data) {
+        if (typeof data.data === 'object' && !Array.isArray(data.data)) {
+          if (data.data.examData && data.data.examData.length > 0) {
+            raw_qs = data.data.examData[0].questionsData || [];
+          }
+        } else if (Array.isArray(data.data) && data.data.length > 0) {
+          raw_qs = data.data[0].questionsData || [];
+        }
+      } else if (data.examData && data.examData.length > 0) {
+        raw_qs = data.examData[0].questionsData || [];
+      }
+
+      const seenOrders = new Set();
+      const seenTitles = new Set();
+      const normalized = [];
+
+      raw_qs.forEach((q, idx) => {
+        let qText = '';
+        if (q.question) {
+          qText = q.question;
+        } else if (q.en && q.en.title) {
+          if (Array.isArray(q.en.title)) {
+            qText = q.en.title.map(t => (t && t.description) ? t.description : '').join('');
+          } else if (typeof q.en.title === 'string') {
+            qText = q.en.title;
+          }
+        }
+
+        qText = cleanHtmlContent(qText);
+        if (!qText.trim()) return;
+
+        const qOrder = q.order !== undefined ? q.order : idx;
+        if (seenOrders.has(qOrder) && seenTitles.has(qText)) {
+          return;
+        }
+        seenOrders.add(qOrder);
+        seenTitles.add(qText);
+
+        // Options
+        let rawOpts = q.options;
+        if (!rawOpts && q.en && q.en.options) {
+          rawOpts = q.en.options;
+        }
+        const opts = [];
+        if (Array.isArray(rawOpts)) {
+          rawOpts.forEach((opt, oIdx) => {
+            const optText = cleanHtmlContent(opt.option || opt.description || opt.text || '');
+            const isCorr = opt.isCorrect === true || opt.isCorrect === 1 || opt.isAnswer === true;
+            opts.push({
+              id: opt._id || oIdx,
+              text: optText,
+              isCorrect: !!isCorr
+            });
+          });
+        }
+
+        // Explanation
+        let exp = q.ansDescription || q.explanation;
+        if (!exp && q.en && q.en.solution) {
+          if (Array.isArray(q.en.solution)) {
+            exp = q.en.solution.map(s => (s && s.description) ? s.description : '').join('');
+          } else if (typeof q.en.solution === 'string') {
+            exp = q.en.solution;
+          }
+        }
+        exp = cleanHtmlContent(exp);
+
+        normalized.push({
+          order: qOrder,
+          question: qText,
+          options: opts,
+          marks: q.marks || q.positiveMarks || 2,
+          negativeMarks: (q.negativeMarks !== undefined) ? q.negativeMarks : 0.5,
+          questionType: q.questionType || 'MCQ',
+          explanation: exp || 'No step-by-step explanation in dataset.'
+        });
+      });
+
+      return normalized;
+    }
+
+    // State Variables
+    let questions = [];
+    let currentIndex = 0;
+    let userResponses = {}; // { qIndex: optId }
+    let questionStates = {}; // 'not_visited', 'not_answered', 'answered', 'marked', 'marked_save'
+    let timerSeconds = 3600;
+    let timerInterval = null;
+    let durationMin = 60;
+
+    // Initialization
+    window.addEventListener('DOMContentLoaded', () => {
+      questions = parseAndNormalizeQuestions(RAW_EXAM_DATA);
+
+      if (questions.length === 0) {
+        document.getElementById('liveQuestionText').innerText = 'No questions found in this test.';
+        return;
+      }
+
+      // Populate Instructions Info
+      const totalQs = questions.length;
+      durationMin = 60;
+      if (RAW_EXAM_DATA.data && RAW_EXAM_DATA.data.examData && RAW_EXAM_DATA.data.examData[0]) {
+        durationMin = RAW_EXAM_DATA.data.examData[0].duration || 60;
+      }
+      timerSeconds = durationMin * 60;
+
+      // Initialize top timerDigits display
+      const initMins = Math.floor(timerSeconds / 60);
+      const initSecs = timerSeconds % 60;
+      document.getElementById('timerDigits').innerText = 
+        `${initMins.toString().padStart(2, '0')}:${initSecs.toString().padStart(2, '0')}`;
+      const posMarks = parseFloat(questions[0]?.marks || 2);
+      const negMarks = parseFloat(questions[0]?.negativeMarks || 0.5);
+
+      document.getElementById('insDuration').innerText = durationMin + '.00 Min';
+      document.getElementById('insTotalQs').innerText = totalQs;
+      document.getElementById('insMaxMarks').innerText = totalQs * posMarks;
+      document.getElementById('insTableRange').innerText = `1 - ${totalQs}`;
+      document.getElementById('insTableCorrect').innerText = `+${posMarks}`;
+      document.getElementById('insTableNegative').innerText = `-${negMarks}`;
+      document.getElementById('palTotalCount').innerText = `${totalQs} Qs`;
+
+      // Initialize states
+      questions.forEach((q, idx) => {
+        questionStates[idx] = 'not_visited';
+      });
+      questionStates[0] = 'not_answered';
+
+      renderPalette();
+      renderKatex();
+    });
+
+    function renderKatex() {
+      if (window.renderMathInElement) {
+        renderMathInElement(document.body, {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '$', right: '$', display: false},
+            {left: '\\(', right: '\\)', display: false},
+            {left: '\\[', right: '\\]', display: true}
+          ],
+          throwOnError: false
+        });
+      }
+    }
+
+    function startExamSession() {
+      if (!document.getElementById('chkAgree').checked) {
+        alert("Please accept the instructions before proceeding.");
+        return;
+      }
+      document.body.classList.add('in-exam');
+      document.getElementById('screenInstructions').style.display = 'none';
+      document.getElementById('instructionsFooter').style.display = 'none';
+      document.getElementById('screenTest').style.display = 'grid';
+
+      loadQuestion(0);
+      startTimer();
+    }
+
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        if (timerSeconds <= 0) {
+          clearInterval(timerInterval);
+          submitExam(false);
+          return;
+        }
+        timerSeconds--;
+        const mins = Math.floor(timerSeconds / 60);
+        const secs = timerSeconds % 60;
+        document.getElementById('timerDigits').innerText = 
+          `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      }, 1000);
+    }
+
+    function toggleMobileSidebar() {
+      const sidebar = document.querySelector('.palette-sidebar');
+      const backdrop = document.getElementById('sidebarBackdrop');
+      if (sidebar && backdrop) {
+        sidebar.classList.toggle('open');
+        backdrop.classList.toggle('active');
+      }
+    }
+
+    function toggleDesktopSidebar() {
+      const screenTest = document.getElementById('screenTest');
+      const arrow = document.getElementById('desktopToggleArrow');
+      if (screenTest && arrow) {
+        screenTest.classList.toggle('sidebar-collapsed');
+        if (screenTest.classList.contains('sidebar-collapsed')) {
+          arrow.innerText = '◀';
+        } else {
+          arrow.innerText = '▶';
+        }
+      }
+    }
+
+    function loadQuestion(idx) {
+      if (idx < 0 || idx >= questions.length) return;
+      currentIndex = idx;
+      const q = questions[idx];
+
+      // Close mobile sidebar on selection
+      const sidebar = document.querySelector('.palette-sidebar');
+      const backdrop = document.getElementById('sidebarBackdrop');
+      if (sidebar && sidebar.classList.contains('open')) {
+        sidebar.classList.remove('open');
+        backdrop.classList.remove('active');
+      }
+
+      if (questionStates[idx] === 'not_visited') {
+        questionStates[idx] = 'not_answered';
+      }
+
+      document.getElementById('currentQDisplay').innerText = `Q. ${idx + 1} / ${questions.length}`;
+      document.getElementById('badgeCorrectMarks').innerText = `+${q.marks || 2} Marks`;
+      document.getElementById('badgeNegativeMarks').innerText = `-${q.negativeMarks || 0.5} Marks`;
+      document.getElementById('badgeQType').innerText = q.questionType || 'MCQ';
+
+      // Render Question Body
+      document.getElementById('liveQuestionText').innerHTML = q.question || 'No question text.';
+
+      // Render Options
+      const optContainer = document.getElementById('liveOptionsGrid');
+      optContainer.innerHTML = '';
+
+      const opts = q.options || [];
+      opts.forEach((opt, optIdx) => {
+        const isSelected = userResponses[idx] === opt.id || userResponses[idx] === optIdx;
+        const row = document.createElement('div');
+        row.className = `option-row ${isSelected ? 'selected' : ''}`;
+        row.onclick = () => selectOption(opt.id !== undefined ? opt.id : optIdx);
+
+        row.innerHTML = `
+          <div class="opt-circle-num">${optIdx + 1}</div>
+          <div class="opt-content">${opt.text || ''}</div>
+        `;
+        optContainer.appendChild(row);
+      });
+
+      renderPalette();
+      updateStatusRibbon();
+      setTimeout(renderKatex, 50);
+    }
+
+    function selectOption(optId) {
+      userResponses[currentIndex] = optId;
+      loadQuestion(currentIndex);
+    }
+
+    function clearCurrentResponse() {
+      delete userResponses[currentIndex];
+      questionStates[currentIndex] = 'not_answered';
+      loadQuestion(currentIndex);
+    }
+
+    function saveAndNext() {
+      if (userResponses[currentIndex] !== undefined) {
+        questionStates[currentIndex] = 'answered';
+      } else {
+        questionStates[currentIndex] = 'not_answered';
+      }
+      if (currentIndex < questions.length - 1) {
+        loadQuestion(currentIndex + 1);
+      } else {
+        renderPalette();
+      }
+    }
+
+    function markAndSave() {
+      if (userResponses[currentIndex] !== undefined) {
+        questionStates[currentIndex] = 'marked_save';
+      } else {
+        questionStates[currentIndex] = 'marked';
+      }
+      if (currentIndex < questions.length - 1) {
+        loadQuestion(currentIndex + 1);
+      } else {
+        renderPalette();
+      }
+    }
+
+    function markForReviewAndNext() {
+      questionStates[currentIndex] = 'marked';
+      if (currentIndex < questions.length - 1) {
+        loadQuestion(currentIndex + 1);
+      } else {
+        renderPalette();
+      }
+    }
+
+    function navigateRelative(delta) {
+      const nextIdx = currentIndex + delta;
+      if (nextIdx >= 0 && nextIdx < questions.length) {
+        loadQuestion(nextIdx);
+      }
+    }
+
+    function renderPalette() {
+      const container = document.getElementById('paletteGridContainer');
+      container.innerHTML = '';
+
+      questions.forEach((q, idx) => {
+        const bubble = document.createElement('div');
+        const st = questionStates[idx];
+        let stateClass = 'pal-not-visited';
+
+        if (st === 'answered') stateClass = 'pal-answered';
+        else if (st === 'not_answered') stateClass = 'pal-not-answered';
+        else if (st === 'marked') stateClass = 'pal-marked';
+        else if (st === 'marked_save') stateClass = 'pal-marked-save';
+
+        bubble.className = `q-pal-bubble ${stateClass} ${idx === currentIndex ? 'active-bubble' : ''}`;
+        bubble.innerText = idx + 1;
+        bubble.onclick = () => loadQuestion(idx);
+        container.appendChild(bubble);
+      });
+    }
+
+    function updateStatusRibbon() {
+      let ans = 0, notAns = 0, marked = 0, notVis = 0;
+      Object.values(questionStates).forEach(st => {
+        if (st === 'answered' || st === 'marked_save') ans++;
+        else if (st === 'not_answered') notAns++;
+        else if (st === 'marked') marked++;
+        else notVis++;
+      });
+
+      document.getElementById('cntAnswered').innerText = ans.toString().padStart(2, '0');
+      document.getElementById('cntNotAnswered').innerText = notAns.toString().padStart(2, '0');
+      document.getElementById('cntMarked').innerText = marked.toString().padStart(2, '0');
+      document.getElementById('cntNotVisited').innerText = notVis.toString().padStart(2, '0');
+    }
+
+    function submitExam(confirmPrompt) {
+      if (confirmPrompt && !confirm("Are you sure you want to submit the exam?")) {
+        return;
+      }
+      clearInterval(timerInterval);
+
+      document.body.classList.remove('in-exam');
+      document.getElementById('screenTest').style.display = 'none';
+      document.getElementById('screenResults').style.display = 'block';
+      document.getElementById('liveTimerPill').style.display = 'none';
+      document.getElementById('btnCloseExam').style.display = 'block';
+
+      evaluateAndRenderResults();
+    }
+
+    function switchResultTab(tabKey) {
+      const btnOverview = document.getElementById('tabBtnOverview');
+      const btnSolutions = document.getElementById('tabBtnSolutions');
+      const secOverview = document.getElementById('resOverviewSection');
+      const secSolutions = document.getElementById('solutionsFeed');
+
+      if (tabKey === 'overview') {
+        btnOverview.classList.add('active');
+        btnSolutions.classList.remove('active');
+        secOverview.style.display = 'flex';
+        secSolutions.style.display = 'none';
+      } else {
+        btnSolutions.classList.add('active');
+        btnOverview.classList.remove('active');
+        secOverview.style.display = 'none';
+        secSolutions.style.display = 'flex';
+      }
+    }
+
+    function evaluateAndRenderResults() {
+      let correctCount = 0;
+      let wrongCount = 0;
+      let skippedCount = 0;
+      let totalScore = 0;
+      const posMarks = parseFloat(questions[0]?.marks || 2);
+      const negMarks = parseFloat(questions[0]?.negativeMarks || 0.5);
+
+      const solFeed = document.getElementById('solutionsFeed');
+      solFeed.innerHTML = '';
+
+      questions.forEach((q, idx) => {
+        const userOpt = userResponses[idx];
+        const correctOpt = (q.options || []).find(o => o.isCorrect === true);
+        const correctOptId = correctOpt ? correctOpt.id : null;
+
+        let status = 'skipped';
+        if (userOpt !== undefined) {
+          if (userOpt === correctOptId) {
+            status = 'correct';
+            correctCount++;
+            totalScore += posMarks;
+          } else {
+            status = 'wrong';
+            wrongCount++;
+            totalScore -= negMarks;
+          }
+        } else {
+          skippedCount++;
+        }
+
+        // Build EXACT Official qs-card
+        const card = document.createElement('div');
+        card.className = `qs-card qs-card--${status}`;
+
+        let statusIconHTML = '';
+        let scorePillHTML = '';
+        if (status === 'correct') {
+          statusIconHTML = `<span class="qs-status-icon qs-status-icon--correct">✓</span>`;
+          scorePillHTML = `<span class="qs-score qs-score--positive">+${posMarks}</span>`;
+        } else if (status === 'wrong') {
+          statusIconHTML = `<span class="qs-status-icon qs-status-icon--wrong">✕</span>`;
+          scorePillHTML = `<span class="qs-score qs-score--negative">-${negMarks}</span>`;
+        } else {
+          statusIconHTML = `<span class="qs-status-icon qs-status-icon--skipped">–</span>`;
+          scorePillHTML = `<span class="qs-score" style="color:#64748b;">0</span>`;
+        }
+
+        let optionsHTML = '';
+        (q.options || []).forEach((opt, optIdx) => {
+          const isCorrectThis = opt.isCorrect === true;
+          const isUserPick = userOpt === opt.id || userOpt === optIdx;
+          
+          let optClass = 'qs-option';
+          let markerClass = 'qs-option__marker qs-option__marker--neutral';
+          let markerChar = (optIdx + 1).toString();
+
+
+          if (isCorrectThis) {
+            optClass += ' qs-option--correct';
+            markerClass = 'qs-option__marker qs-option__marker--correct';
+            markerChar = '✓';
+          } else if (isUserPick) {
+            optClass += ' qs-option--wrong';
+            markerClass = 'qs-option__marker qs-option__marker--wrong';
+            markerChar = '✕';
+          }
+
+          optionsHTML += `
+            <div class="${optClass}">
+              <div class="qs-option__content">
+                <span class="${markerClass}">${markerChar}</span>
+                <span class="qs-option__text">${opt.text || ''}</span>
+
+              </div>
+            </div>
+          `;
+        });
+
+        // Exact Official Yellow Accordion
+        const explanationText = q.explanation || 'No step-by-step explanation available for this question.';
+        const expAccordionHTML = `
+          <div class="qs-accordion-item">
+            <button class="qs-accordion-btn" type="button" onclick="toggleAccordion(this)">
+              <span>💡 Answer Explanation</span>
+              <span style="font-size:11px;">▼</span>
+            </button>
+            <div class="qs-accordion-body">
+              ${explanationText}
+            </div>
+          </div>
+        `;
+
+        card.innerHTML = `
+          <div class="qs-card__header qs-card__header--${status}">
+            <div style="display:flex; align-items:center; gap:8px;">
+              ${statusIconHTML}
+              <span class="qs-chip qs-chip--primary">Q ${idx + 1}</span>
+              <span class="qs-chip qs-chip--purple">${q.questionType || 'MCQ'}</span>
+            </div>
+            <div class="qs-card__meta qs-card__meta--${status}">
+              <span>⏱️ 0s</span>
+              ${scorePillHTML}
+            </div>
+          </div>
+          <div class="qs-card__body">
+            <div class="qs-question-text">${q.question || ''}</div>
+            <div class="d-flex flex-column gap-2 mb-3">${optionsHTML}</div>
+            ${expAccordionHTML}
+            <div style="margin-top:10px;">
+              <button type="button" class="qs-btn-report" onclick="alert('Thank you! Issue report submitted.')">
+                🚩 Find issue in question? Report Here
+              </button>
+            </div>
+          </div>
+        `;
+
+        solFeed.appendChild(card);
+      });
+
+      // Update Dashboard Hero Stats & Overview Breakdown
+      const maxMarks = questions.length * posMarks;
+      const netScore = Math.max(0, totalScore);
+      const totalAttempted = correctCount + wrongCount;
+      const accuracy = (totalAttempted > 0) ? ((correctCount / totalAttempted) * 100).toFixed(1) : '0.0';
+      const attemptedPct = ((totalAttempted / questions.length) * 100).toFixed(1);
+
+      document.getElementById('resCntCorrect').innerText = correctCount;
+      document.getElementById('resCntWrong').innerText = wrongCount;
+      document.getElementById('resCntSkipped').innerText = skippedCount;
+      document.getElementById('resAccuracy').innerText = `Accuracy - ${accuracy}%`;
+      document.getElementById('resScoreVal').innerText = `${netScore.toFixed(1)} / ${maxMarks}`;
+
+      // Calculate and format actual average time spent per question
+      const timeSpentSeconds = (durationMin * 60) - timerSeconds;
+      const avgTimeSeconds = questions.length > 0 ? Math.round(timeSpentSeconds / questions.length) : 0;
+      const avgMins = Math.floor(avgTimeSeconds / 60);
+      const avgSecs = avgTimeSeconds % 60;
+      document.getElementById('resAvgTime').innerText = 
+        `${avgMins.toString().padStart(2, '0')}:${avgSecs.toString().padStart(2, '0')}`;
+
+      // Overview Tab
+      document.getElementById('ovCorrectCount').innerText = correctCount;
+      document.getElementById('ovCorrectPts').innerText = `+${(correctCount * posMarks).toFixed(1)} pts`;
+      document.getElementById('ovBarCorrect').style.width = `${(correctCount / questions.length) * 100}%`;
+
+      document.getElementById('ovWrongCount').innerText = wrongCount;
+      document.getElementById('ovWrongPts').innerText = `-${(wrongCount * negMarks).toFixed(1)} pts`;
+      document.getElementById('ovBarWrong').style.width = `${(wrongCount / questions.length) * 100}%`;
+
+      document.getElementById('ovSkippedCount').innerText = skippedCount;
+      document.getElementById('ovBarSkipped').style.width = `${(skippedCount / questions.length) * 100}%`;
+
+      document.getElementById('ovNetScoreVal').innerHTML = `${netScore.toFixed(1)} <span class="ov-net-score__max">/ ${maxMarks}</span>`;
+      document.getElementById('ovTopScore').innerText = `${maxMarks} / ${maxMarks}`;
+      document.getElementById('ovAttemptedPct').innerText = `${attemptedPct}%`;
+
+      setTimeout(renderKatex, 100);
+    }
+
+    function toggleAccordion(btn) {
+      const body = btn.nextElementSibling;
+      const arrow = btn.querySelector('span:last-child');
+      if (body.style.display === 'none') {
+        body.style.display = 'block';
+        arrow.innerText = '▼';
+      } else {
+        body.style.display = 'none';
+        arrow.innerText = '▲';
+      }
+    }
+  </script>
+</body>
+</html>

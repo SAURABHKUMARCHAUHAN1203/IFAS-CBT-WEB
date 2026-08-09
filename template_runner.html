@@ -1342,6 +1342,21 @@
     window.addEventListener('DOMContentLoaded', () => {
       questions = parseAndNormalizeQuestions(RAW_EXAM_DATA);
 
+      // Set Dynamic Exam Title from Data or Parent Window
+      let dynamicTitle = "IFAS CBT Test";
+      if (window.parent && window.parent.TEST_TITLE) {
+        dynamicTitle = window.parent.TEST_TITLE;
+      }
+      if (RAW_EXAM_DATA && RAW_EXAM_DATA.data && RAW_EXAM_DATA.data.examData && RAW_EXAM_DATA.data.examData[0]) {
+        const ed = RAW_EXAM_DATA.data.examData[0];
+        if (ed.en && ed.en.name) dynamicTitle = ed.en.name;
+      }
+      const topTitleElem = document.getElementById('topExamTitle');
+      if (topTitleElem) topTitleElem.innerText = dynamicTitle;
+      const bannerTitleElem = document.getElementById('resBannerTitle');
+      if (bannerTitleElem) bannerTitleElem.innerText = dynamicTitle;
+      document.title = `${dynamicTitle} - IFAS CBT`;
+
       if (questions.length === 0) {
         document.getElementById('liveQuestionText').innerText = 'No questions found in this test.';
         return;

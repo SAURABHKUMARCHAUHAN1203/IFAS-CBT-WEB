@@ -1232,10 +1232,10 @@
     // Embedded Solved Exam Dataset
     const RAW_EXAM_DATA = window.parent.EXAM_DATA || window.EXAM_DATA;
 
-    // Helper to clean escaped newlines & formatting artifacts
+    // Helper to clean escaped newlines & formatting artifacts, and render standalone image URLs
     function cleanHtmlContent(html) {
       if (!html || typeof html !== 'string') return '';
-      return html
+      let str = html
         .replace(/\\r\\n/g, '')
         .replace(/\\n/g, '')
         .replace(/\\r/g, '')
@@ -1243,6 +1243,18 @@
         .replace(/\r\n/g, '')
         .replace(/\r/g, '')
         .replace(/\n/g, '');
+
+      const imgUrlRegex = /(https?:\/\/[^\s<>"']+\.(?:png|jpg|jpeg|gif|webp)(?:\?[^\s<>"']*)?|https?:\/\/media\.ifasonline\.com\/production\/[^\s<>"']+)/gi;
+      
+      str = str.replace(imgUrlRegex, function(match, p1, offset, fullStr) {
+        const before = fullStr.substring(Math.max(0, offset - 10), offset);
+        if (/src=["']?\s*$/i.test(before)) {
+          return match;
+        }
+        return `<br><img src="${match}" style="max-width:100%; max-height:450px; height:auto; margin:12px 0; border-radius:8px; display:block; border:1px solid #e2e8f0; box-shadow:0 4px 14px rgba(0,0,0,0.08);" alt="Question Diagram" /><br>`;
+      });
+
+      return str;
     }
 
     // Universal Question Normalizer

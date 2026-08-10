@@ -1257,6 +1257,27 @@
       return str;
     }
 
+    function processDescItem(item) {
+      if (!item) return '';
+      if (typeof item === 'string') return item;
+      const desc = item.description || item.option || item.text || item.title || '';
+      if (item.descType === 'img' || (typeof desc === 'string' && (desc.startsWith('http://') || desc.startsWith('https://')) && !desc.includes('<'))) {
+        return `<br><img src="${desc.trim()}" style="max-width:100%; max-height:450px; height:auto; margin:12px 0; border-radius:8px; display:block; border:1px solid #e2e8f0; box-shadow:0 4px 14px rgba(0,0,0,0.08);" alt="Question Diagram" /><br>`;
+      }
+      return String(desc);
+    }
+
+    function normalizeField(field) {
+      if (!field) return '';
+      if (Array.isArray(field)) {
+        return field.map(processDescItem).join('');
+      }
+      if (typeof field === 'object') {
+        return processDescItem(field);
+      }
+      return String(field);
+    }
+
     // Universal Question Normalizer
     function parseAndNormalizeQuestions(data) {
       let raw_qs = [];
@@ -1277,15 +1298,14 @@
       const normalized = [];
 
       raw_qs.forEach((q, idx) => {
-        let qText = '';
-        if (q.question) {
-          qText = q.question;
-        } else if (q.en && q.en.title) {
-          if (Array.isArray(q.en.title)) {
-            qText = q.en.title.map(t => (t && t.description) ? t.description : '').join('');
-          } else if (typeof q.en.title === 'string') {
-            qText = q.en.title;
-          }
+        let qText = q.question;
+        if (!qText && q.en && q.en.title) {
+          qText = normalizeField(q.en.title);
+        } else {
+          qText = normalizeField(qText);
+        }
+        if (q.questionImage) {
+          qText += `<br><img src="${q.questionImage}" style="max-width:100%; max-height:450px; height:auto; margin:12px 0; border-radius:8px; display:block; border:1px solid #e2e8f0; box-shadow:0 4px 14px rgba(0,0,0,0.08);" alt="Question Diagram" /><br>`;
         }
 
         qText = cleanHtmlContent(qText);
@@ -1306,7 +1326,11 @@
         const opts = [];
         if (Array.isArray(rawOpts)) {
           rawOpts.forEach((opt, oIdx) => {
-            const optText = cleanHtmlContent(opt.option || opt.description || opt.text || '');
+            let optText = normalizeField(opt.description || opt.option || opt.text || opt);
+            if (opt.optionImage || opt.image) {
+              optText += `<br><img src="${opt.optionImage || opt.image}" style="max-width:100%; max-height:300px; height:auto; margin:8px 0; border-radius:6px;" alt="Option Diagram" />`;
+            }
+            optText = cleanHtmlContent(optText);
             const isCorr = opt.isCorrect === true || opt.isCorrect === 1 || opt.isAnswer === true;
             opts.push({
               id: opt._id || oIdx,
@@ -1319,11 +1343,9 @@
         // Explanation
         let exp = q.ansDescription || q.explanation;
         if (!exp && q.en && q.en.solution) {
-          if (Array.isArray(q.en.solution)) {
-            exp = q.en.solution.map(s => (s && s.description) ? s.description : '').join('');
-          } else if (typeof q.en.solution === 'string') {
-            exp = q.en.solution;
-          }
+          exp = normalizeField(q.en.solution);
+        } else {
+          exp = normalizeField(exp);
         }
         exp = cleanHtmlContent(exp);
 

@@ -131,12 +131,14 @@
 
   <script>
     const API_BASE = "https://stagingbackend.ifasonline.com";
-    const AUTH_TOKEN = "3bf7fc663cd0d5dad7b1e9885e61a840";
-
+    
     function getQueryParam(param) {
       const urlParams = new URLSearchParams(window.location.search);
       return urlParams.get(param) || urlParams.get('id');
     }
+
+    const DEFAULT_TOKEN = "2dda292e12b62572fb754062650646bc";
+    const AUTH_TOKEN = getQueryParam('token') || getQueryParam('auth') || DEFAULT_TOKEN;
 
     function useId(id) {
       document.getElementById('exam-id-input').value = id;
